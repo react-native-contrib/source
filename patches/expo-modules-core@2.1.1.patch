@@ -1,0 +1,87 @@
+diff --git a/ios/Core/Views/SwiftUI/SwiftUIChild.swift b/ios/Core/Views/SwiftUI/SwiftUIChild.swift
+index 05f2d8aa3fc9f47b9b41a5b2b08e0eeb771ec320..f63e9a9ea52744be930a922589e05e438915fb0c 100644
+--- a/ios/Core/Views/SwiftUI/SwiftUIChild.swift
++++ b/ios/Core/Views/SwiftUI/SwiftUIChild.swift
+@@ -12,13 +12,19 @@ extension ExpoSwiftUI {
+    */
+   public struct Child: SwiftUI.View, Identifiable {
+     public let id: Int
++    #if os(iOS)
+     public let view: UIView
++    #endif
++    #if os(macOS)
++    public let view: NSView
++    #endif
+ 
+     @ObservedObject
+     private var layoutMetrics: LayoutMetrics
+ 
+     private let viewFrameObserver: UIViewFrameObserver
+ 
++    #if os(iOS)
+     init(view: UIView) {
+       self.id = ObjectIdentifier(view).hashValue
+       self.view = view
+@@ -41,5 +47,30 @@ extension ExpoSwiftUI {
+         .frame(width: layoutMetrics.width, height: layoutMetrics.height, alignment: .topLeading)
+         .offset(x: layoutMetrics.x, y: layoutMetrics.y)
+     }
++    #endif
++    #if os(macOS)
++    init(view: NSView) {
++      self.id = ObjectIdentifier(view).hashValue
++      self.view = view
++      self.layoutMetrics = LayoutMetrics(frame: view.frame)
++      self.viewFrameObserver = UIViewFrameObserver(view: view)
++
++      // Observe for layout changes made by React.
++      viewFrameObserver.observe { [weak view, layoutMetrics] frame in
++        // Update layout metrics for the SwiftUI view. This will trigger a re-render as it changes the observed object.
++        layoutMetrics.frame = frame
++
++        // Reset UIKit's origin to zero so it's fully controlled by `.offset(x:y:)` in SwiftUI.
++        // SwiftUI may reset it anyway, but we want this to be explicit.
++        view?.frame = CGRect(origin: .zero, size: frame.size)
++      }
++    }
++
++    public var body: some SwiftUI.View {
++      return NSViewHost(view: view)
++        .frame(width: layoutMetrics.width, height: layoutMetrics.height, alignment: .topLeading)
++        .offset(x: layoutMetrics.x, y: layoutMetrics.y)
++    }
++    #endif
+   }
+ }
+diff --git a/ios/Core/Views/SwiftUI/SwiftUIViewHost.swift b/ios/Core/Views/SwiftUI/SwiftUIViewHost.swift
+index 38cbccd318250a025b22214b1d037265c10ac691..73cdfc1f402eb7da0b3f2926e5e5b28a1fe88355 100644
+--- a/ios/Core/Views/SwiftUI/SwiftUIViewHost.swift
++++ b/ios/Core/Views/SwiftUI/SwiftUIViewHost.swift
+@@ -3,6 +3,7 @@
+ import SwiftUI
+ 
+ extension ExpoSwiftUI {
++  #if os(iOS)
+   /**
+    SwiftUI view that embeds an UIKit-based view.
+    */
+@@ -17,4 +18,19 @@ extension ExpoSwiftUI {
+       // Nothing to do here
+     }
+   }
++  #endif
++
++  #if os(macOS)
++  struct NSViewHost: NSViewRepresentable {
++    let view: NSView
++
++    func makeNSView(context: Context) -> NSView {
++      return view
++    }
++
++    func updateNSView(_ nsView: NSView, context: Context) {
++      // Nothing to do here
++    }
++  }
++  #endif
+ }

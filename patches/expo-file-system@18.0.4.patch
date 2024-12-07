@@ -1,0 +1,37 @@
+diff --git a/ios/FileSystemHelpers.swift b/ios/FileSystemHelpers.swift
+index 11f1c7d50cb8fdb5bdaad3e88477aeadbafc0d01..c3cbc27f33bf7ce913e94dedda8c36d8b4f25a56 100644
+--- a/ios/FileSystemHelpers.swift
++++ b/ios/FileSystemHelpers.swift
+@@ -102,7 +102,7 @@ internal func copyPHAsset(fromUrl: URL, toUrl: URL, with resourceManager: PHAsse
+ }
+ 
+ internal func isPhotoLibraryStatusAuthorized() -> Bool {
+-  if #available(iOS 14, tvOS 14, *) {
++  if #available(iOS 14, macOS 11, tvOS 14, *) {
+     let status = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+     return status == .authorized || status == .limited
+   }
+diff --git a/ios/Next/FileSystemFileHandle.swift b/ios/Next/FileSystemFileHandle.swift
+index 3e668e6359c52c0660bf12fa1bddfc01411f136e..bd484bf85197833c0b3244114a0d0e71b0765e32 100644
+--- a/ios/Next/FileSystemFileHandle.swift
++++ b/ios/Next/FileSystemFileHandle.swift
+@@ -1,6 +1,7 @@
+ import Foundation
+ import ExpoModulesCore
+ 
++@available(iOS 14, macOS 11, tvOS 14, *)
+ internal final class FileSystemFileHandle: SharedRef<FileHandle> {
+   let file: FileSystemFile
+   let handle: FileHandle
+diff --git a/ios/Next/FileSystemNextModule.swift b/ios/Next/FileSystemNextModule.swift
+index aa76b98fd8fff08c10ade7507501fe7435334f60..8710e4d00b66e5cfacb090d87721ed72c9ad153a 100644
+--- a/ios/Next/FileSystemNextModule.swift
++++ b/ios/Next/FileSystemNextModule.swift
+@@ -2,6 +2,7 @@
+ 
+ import ExpoModulesCore
+ 
++@available(iOS 14, macOS 11, tvOS 14, *)
+ public final class FileSystemNextModule: Module {
+   public func definition() -> ModuleDefinition {
+     Name("FileSystemNext")

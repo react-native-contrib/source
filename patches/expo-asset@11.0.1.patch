@@ -1,0 +1,12 @@
+diff --git a/ios/ExpoAsset.podspec b/ios/ExpoAsset.podspec
+index 832decbfd3de2b5c11f70d10ece92d7be69a409b..d4efcde415e34cdee371ce4e97a40294b342c5ee 100644
+--- a/ios/ExpoAsset.podspec
++++ b/ios/ExpoAsset.podspec
+@@ -12,6 +12,7 @@ Pod::Spec.new do |s|
+   s.homepage       = package['homepage']
+   s.platforms      = {
+     :ios => '15.1',
++    :macos => '11.0',
+     :tvos => '15.1'
+   }
+   s.swift_version  = '5.4'

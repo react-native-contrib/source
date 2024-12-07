@@ -1,0 +1,30 @@
+diff --git a/lib-commonjs/commands/initWindows/initWindows.js b/lib-commonjs/commands/initWindows/initWindows.js
+index dc0ce4ca6e76fa518ab55fdc28fa9b6c742be46e..c8a3e826b801d5c67bdc5f88627db6650a276a7f 100644
+--- a/lib-commonjs/commands/initWindows/initWindows.js
++++ b/lib-commonjs/commands/initWindows/initWindows.js
+@@ -86,16 +86,20 @@ class InitWindows {
+             throw new telemetry_1.CodedError('NoPackageJson', 'Unable to find package.json. This should be run from within an existing react-native project.');
+         }
+         let name = fs_1.default.readJsonFileSync(pkgJsonPath).name;
+-        if (!name) {
+-            const appJsonPath = path_1.default.join(projectDir, 'app.json');
+-            if (fs_1.default.existsSync(appJsonPath)) {
+-                this.verboseMessage('Looking for project name in app.json...');
+-                name = fs_1.default.readJsonFileSync(pkgJsonPath).name;
++        const appJsonPath = path_1.default.join(projectDir, 'app.json');
++        if (fs_1.default.existsSync(appJsonPath)) {
++            this.verboseMessage('Looking for project name in app.json...');
++            const appJson = fs_1.default.readJsonFileSync(appJsonPath);
++            if ('expo' in appJson) {
++                name = appJson.expo.name;
++            } else {
++                name = appJson.name;
+             }
+         }
+         if (!name) {
+             throw new telemetry_1.CodedError('NoProjectName', 'Please specify name in package.json or app.json');
+         }
++        console.log(name);
+         return name;
+     }
+     printTemplateList() {

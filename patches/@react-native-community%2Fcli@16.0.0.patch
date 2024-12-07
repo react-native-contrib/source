@@ -1,0 +1,17 @@
+diff --git a/build/commands/init/validate.js b/build/commands/init/validate.js
+index 03327548eded67643317247618c41e0251bddfa4..f68c57b6a640e271245dbb11f7a8d2fd579be392 100644
+--- a/build/commands/init/validate.js
++++ b/build/commands/init/validate.js
+@@ -21,9 +21,9 @@ function validateProjectName(name) {
+   if (reservedNames.includes(lowerCaseName)) {
+     throw new _ReservedNameError.default(lowerCaseName);
+   }
+-  if (name.match(/helloworld/gi)) {
+-    throw new _HelloWorldError.default();
+-  }
++  // if (name.match(/helloworld/gi)) {
++  //   throw new _HelloWorldError.default();
++  // }
+ }
+ 
+ //# sourceMappingURL=/Users/thymikee/Developer/oss/rncli/packages/cli/build/commands/init/validate.js.map
