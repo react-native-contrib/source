@@ -98,7 +98,17 @@ if (options.platform === 'macos') {
   run('bun run react-native-macos-init', projectDir);
   copyRecursiveSync(overlayDir, projectDir);
 
-  copyRecursiveSync(path.join(projectDir, 'macos'), path.join(prebuildTemplatePath, 'macos'));
+  // copyRecursiveSync(path.join(projectDir, 'macos'), path.join(prebuildTemplatePath, 'macos'));
+}
+
+// Add Windows platform
+if (options.platform === 'windows') {
+
+  run('bun add react-native-windows@latest', projectDir);
+  run('bun react-native init-windows --overwrite --template cpp-app', projectDir);
+  copyRecursiveSync(overlayDir, projectDir);
+
+  // copyRecursiveSync(path.join(projectDir, 'windows'), path.join(prebuildTemplatePath, 'windows'));
 }
 
 
