@@ -53,7 +53,7 @@
     "build-overlays": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "cp -R apps/prebuild-cli/overlays dist/apps/prebuild-cli"
+        "command": "bun apps/prebuild-cli/scripts/copyOverlaysToDist.ts"
       }
     },
     "serve": {
