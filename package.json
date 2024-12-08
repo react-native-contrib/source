@@ -5,6 +5,7 @@
   "scripts": {},
   "private": true,
   "dependencies": {
+    "@rnx-kit/metro-config": "^2.0.1",
     "commander": "^12.1.0",
     "find-up": "^7.0.0"
   },
@@ -19,6 +20,7 @@
     "@nx/workspace": "20.2.1",
     "@react-native-community/cli": "^16.0.0",
     "@react-native-windows/cli": "^0.76.0",
+    "@react-native/metro-config": "^0.76.4",
     "@swc-node/register": "~1.9.1",
     "@swc/core": "~1.5.7",
     "@swc/helpers": "~0.5.11",
