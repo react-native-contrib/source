@@ -10,6 +10,7 @@ const PROJECT_NAME = 'HelloWorld';
 program
   .option('-f --framework <framework>', 'Framework to use. One of: react-native, expo')
   .option('-p --platform <platform>', 'Platform to use. One of: android, ios, macos, windows')
+  .option('-d --dry-run', 'Dry run?')
 // .option('-t, --template <char>', 'The framework template to use');
 
 program.parse();
@@ -18,6 +19,7 @@ const options = program.opts();
 // const limit = options.framework ? 1 : undefined;
 console.log(options);
 const selectedFramework = options.framework;
+const selectedPlatforms = options.platform ?? ['android', 'ios', 'macos', 'windows'];
 
 const stagingDir = path.join(process.cwd(), '.tmp');
 const rootPackageJsonPath = findUpSync('package.json');
@@ -35,20 +37,6 @@ function run(command: string, cwd: string) {
   execSync(command, { cwd, stdio: 'inherit' });
 }
 
-function copyRecursiveSync(src, dest) {
-  const exists = fs.existsSync(src);
-  const stats = exists && fs.statSync(src);
-  const isDirectory = exists && stats.isDirectory();
-  if (isDirectory) {
-    fs.mkdirSync(dest, { recursive: true });
-    fs.readdirSync(src).forEach((childItemName) => {
-      copyRecursiveSync(path.join(src, childItemName), path.join(dest, childItemName));
-    });
-  } else {
-    fs.copyFileSync(src, dest);
-  }
-}
-
 // Clean up any existing staging directory
 if (fs.existsSync(stagingDir)) {
   fs.rmdirSync(stagingDir, { recursive: true });
@@ -56,16 +44,8 @@ if (fs.existsSync(stagingDir)) {
 // Make a staging directory under /tmp
 fs.mkdirSync(stagingDir, { recursive: true });
 
-// Create new project in the staging directory
-// const cliTool = selectedFramework === 'react-native'
-//   ? 'bun rnc-cli'
-//   : 'bunx create-expo-app@latest';
-// const template = options.template ?? selectedFramework === 'react-native'
-//   ? ''
-//   : '--template expo-template-blank-typescript';
-
 const expoCreate = (projectName: string) =>
-  `bunx create-expo-app@latest ${projectName} --yes --template expo-template-blank-typescript`;
+  `bunx create-expo-app@latest ${projectName} --template expo-template-blank-typescript`;
 const reactNativeCreate = (projectName: string) =>
   `bun run rnc-cli init ${projectName} --install-pods false --pm bun`;
 
@@ -88,31 +68,101 @@ projectPackageJson.patchedDependencies = rootPackageJson.patchedDependencies;
 fs.writeFileSync(projectPackageJsonPath, JSON.stringify(projectPackageJson, null, 2));
 
 // PLATFORM-SPECIFIC
-const prebuildTemplatePath = path.join(path.dirname(rootPackageJsonPath), 'packages', 'prebuild-expo');
 
-// macOS
+run(`bunx shx cp -R ${overlayDir}/expo-common/* ${projectDir}`, projectDir);
 
-// Add macOS platform
-if (options.platform === 'macos') {
+const generateIosAndroidProjects = () => {
+  if (options.framework === 'expo') {
+    const expoBareMinTemplatePath = path.dirname(require.resolve('expo-template-bare-minimum/package.json'));
+
+    // run('bunx expo prebuild --clean --no-install', projectDir);
+    run(`bunx shx cp -R ${expoBareMinTemplatePath}/android ${projectDir}`, projectDir);
+    run(`bunx shx cp -R ${expoBareMinTemplatePath}/ios ${projectDir}`, projectDir);
+    run(`bunx shx cp -R ${overlayDir}/expo-common/* ${projectDir}`, projectDir);
+  }
+};
+
+const generateMacosProject = () => {
   run('bun add react-native-macos@latest', projectDir);
   run('bun run react-native-macos-init', projectDir);
-  copyRecursiveSync(overlayDir, projectDir);
+  run(`bunx shx cp -R ${overlayDir}/${options.framework}-macos/* ${projectDir}`, projectDir);
+  // copyRecursiveSync(overlayDir, projectDir);
+};
 
-  // copyRecursiveSync(path.join(projectDir, 'macos'), path.join(prebuildTemplatePath, 'macos'));
-}
-
-// Add Windows platform
-if (options.platform === 'windows') {
-
+const generateWindowsProject = () => {
   run('bun add react-native-windows@latest', projectDir);
   run('bun react-native init-windows --overwrite --template cpp-app', projectDir);
-  copyRecursiveSync(overlayDir, projectDir);
+  // We have to copy the common overlay again because RNW rudely overwrites the metro.config.js
+  run(`bunx shx cp -R ${overlayDir}/expo-common/* ${projectDir}`, projectDir);
+  run(`bunx shx cp -R ${overlayDir}/${options.framework}-windows/* ${projectDir}`, projectDir);
+};
 
-  // copyRecursiveSync(path.join(projectDir, 'windows'), path.join(prebuildTemplatePath, 'windows'));
+const addMissingDeps = () => {
+  run('bun add -D @react-native/metro-config', projectDir);
+  run('bun add -D @rnx-kit/metro-config', projectDir);
 }
 
+// iOS and Android
+if (selectedPlatforms.includes('android') || selectedPlatforms.includes('ios')) {
+  generateIosAndroidProjects();
+}
 
-// #bun add react-native-macos@latest
-// #bun run react-native-macos-init
-// #cp -R ../../overlays/* .
-// #pod install --project-directory=macos
+// macOS
+if (selectedPlatforms.includes('macos')) {
+  generateMacosProject();
+}
+
+// Windows
+if (selectedPlatforms.includes('windows')) {
+  generateWindowsProject();
+}
+
+addMissingDeps();
+
+/**
+ * SAVE FILES FROM STAGING DIRECTORY TO PACKAGE DIRECTORY
+ */
+
+if (options.dryRun) {
+  console.log('Dry run complete');
+  process.exit(0);
+}
+
+const prebuildTemplatePath = path.join(path.dirname(rootPackageJsonPath), 'packages', 'prebuild-expo');
+
+const copyFromStagingToPrebuildTemplate = () => {
+  const EXCLUDE_FILES = [
+    '.expo',
+    'node_modules',
+    'patches',
+    'bun.lockb',
+    // We're going to handle package.json separately
+    'package.json',
+    'package-lock.json',
+  ];
+  // Copy base files
+  fs.cpSync(projectDir, prebuildTemplatePath, {
+    recursive: true,
+    filter: (src: string) => {
+      return !EXCLUDE_FILES.includes(path.basename(src));
+    },
+  });
+
+  // Update package.json with scripts/deps/devDeps
+  const projectPackageJson = JSON.parse(fs.readFileSync(projectPackageJsonPath, 'utf8'));
+  const prebuildTemplatePackageJsonPath = path.join(prebuildTemplatePath, 'package.json');
+  const prebuildTemplatePackageJson = JSON.parse(fs.readFileSync(prebuildTemplatePackageJsonPath, 'utf8'));
+  prebuildTemplatePackageJson.scripts = {
+    ...projectPackageJson.scripts,
+    // Workaround because @expo/cli doesn't work for out-of-tree platforms yet
+    start: 'npx @react-native-community/cli start',
+    // Workaround because react-native-macos-init doesn't seem to add the run-macos script
+    macos: 'npx @react-native-community/cli run-macos'
+  };
+  prebuildTemplatePackageJson.dependencies = projectPackageJson.dependencies;
+  prebuildTemplatePackageJson.devDependencies = projectPackageJson.devDependencies;
+
+  fs.writeFileSync(prebuildTemplatePackageJsonPath, JSON.stringify(prebuildTemplatePackageJson, null, 2));
+};
+
+copyFromStagingToPrebuildTemplate();
