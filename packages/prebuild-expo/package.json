@@ -3,7 +3,29 @@
   "version": "0.0.1",
   "main": "index.ts",
   "private": true,
-  "scripts": {},
-  "dependencies": {},
-  "devDependencies": {}
+  "scripts": {
+    "start": "npx @react-native-community/cli start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "windows": "npx @react-native-community/cli run-windows",
+    "test:windows": "jest --config jest.config.windows.js",
+    "macos": "npx @react-native-community/cli run-macos"
+  },
+  "dependencies": {
+    "expo": "~52.0.18",
+    "expo-status-bar": "~2.0.0",
+    "react": "18.3.1",
+    "react-native": "0.76.5",
+    "react-native-macos": "^0.76.6",
+    "react-native-windows": "^0.76.2"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.25.2",
+    "@react-native/metro-config": "^0.76.5",
+    "@rnx-kit/jest-preset": "^0.1.17",
+    "@rnx-kit/metro-config": "^2.0.1",
+    "@types/react": "~18.3.12",
+    "typescript": "^5.3.3"
+  }
 }
