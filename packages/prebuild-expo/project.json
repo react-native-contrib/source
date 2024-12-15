@@ -5,13 +5,15 @@
   "projectType": "library",
   "targets": {
     "build": {
-      "executor": "@nx/js:tsc",
+      "executor": "nx:run-commands",
       "outputs": ["{options.outputPath}"],
       "options": {
-        "outputPath": "dist/packages/prebuild-expo",
-        "main": "packages/prebuild-expo/src/index.ts",
-        "tsConfig": "packages/prebuild-expo/tsconfig.lib.json",
-        "assets": ["packages/prebuild-expo/*.md"]
+        "commands": [
+          "bunx shx rm -rf dist/packages/prebuild-expo",
+          "bunx shx mkdir -p dist/packages/prebuild-expo",
+          "bunx shx cp -R packages/prebuild-expo dist/packages"
+        ],
+        "parallel": false
       }
     },
     "nx-release-publish": {
